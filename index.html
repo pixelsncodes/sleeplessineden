@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sleepless in Eden</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Press Start 2P', cursive;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #330000;
+      color: white;
+    }
+    #game {
+      position: relative;
+      width: 960px;
+      height: 540px;
+      overflow: hidden;
+      background-image: url('https://imgur.com/f4hALdt.png');
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    #menu, #gameOverScreen, #endScreen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: #330000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    h1 {
+      font-size: 20px;
+      text-align: center;
+      line-height: 2;
+    }
+    button {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      margin: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    .hidden { display: none !important; }
+    #character {
+      position: absolute;
+      bottom: 82px;
+      left: 250px;
+      width: 80px;
+      height: 80px;
+    }
+    .flamingo {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      animation: moveLeft 3s linear forwards;
+    }
+    @keyframes moveLeft {
+      from { right: -50px; }
+      to { right: 100%; }
+    }
+    #scoreboard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 12px;
+    }
+    #hearts {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    .heart {
+      width: 25px;
+      height: 25px;
+      margin-left: 5px;
+    }
+    #timer {
+      position: absolute;
+      top: 10px;
+      right: 150px;
+      font-size: 12px;
+    }
+    #gameOverText {
+      font-size: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #introMessage {
+      transition: opacity 1s ease;
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div id="introMessage" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:14px; text-align:center; max-width:80%; padding:20px; color:white; font-family:'Press Start 2P', cursive; background-color:rgba(0,0,0,0.6); z-index:15; display:none;">
+      <p id="typewriterText" style="white-space: pre-line;"></p>
+    </div>
+    <div id="menu">
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        <img src="https://imgur.com/cQ14PT5.png" style="width: 40px; height: 40px; margin-right: 20px;">
+        <img src="https://imgur.com/4fIjeg5.png" style="width: 80px; height: 80px;">
+        <img src="https://imgur.com/Bvc26Ct.png" style="width: 40px; height: 40px; margin-left: 20px;">
+      </div>
+      <h1>SLEEPLESS<br>IN<br>EDEN</h1>
+      <button id="startButton">START GAME</button>
+    </div>
+    <div id="gameOverScreen" class="hidden">
+      <div id="gameOverText">GAME OVER</div>
+      <button onclick="retryGame()">RETRY</button>
+      <button onclick="returnToMenu()">MENU</button>
+    </div>
+    <div id="endScreen" class="hidden">
+      <div id="gameOverText">THIS IS THE END</div>
+      <button onclick="retryGame()">RETRY</button>
+      <button onclick="returnToMenu()">MENU</button>
+    </div>
+    <img id="character" src="https://imgur.com/zHtBJ2H.png" class="hidden">
+    <div id="scoreboard">Score: 0</div>
+    <div id="timer">Time: 90</div>
+    <div id="hearts">
+      <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">
+      <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">
+      <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">
+    </div>
+  </div>
+  <script>
+    const startButton = document.getElementById('startButton');
+    const timerDisplay = document.getElementById('timer');
+    const scoreboard = document.getElementById('scoreboard');
+    const heartsContainer = document.getElementById('hearts');
+    const character = document.getElementById('character');
+    let flamingoInterval;
+    let countdownInterval;
+    let gameSpeed = 1500;
+    let score = 0;
+    let lives = 3;
+    let timer = 90;
+
+    startButton.addEventListener('click', () => {
+      startGame();
+    });
+
+    function startGame() {
+      const typewriterTarget = document.getElementById('typewriterText');
+      const introMessage = document.getElementById('introMessage');
+      const menu = document.getElementById('menu');
+
+      typewriterTarget.textContent = '';
+      menu.classList.add('hidden');
+      introMessage.style.display = 'block';
+      introMessage.style.opacity = 1;
+      typeWriterText();
+
+      setTimeout(() => {
+        introMessage.style.opacity = 0;
+        setTimeout(() => {
+          introMessage.style.display = 'none';
+          character.classList.remove('hidden');
+          initializeGame();
+        }, 1000);
+      }, 7000);
+    }
+
+    function initializeGame() {
+      score = 0;
+      lives = 3;
+      timer = 90;
+      scoreboard.textContent = 'Score: 0';
+      timerDisplay.textContent = 'Time: 90';
+      heartsContainer.innerHTML = `
+        <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">
+        <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">
+        <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">`;
+
+      flamingoInterval = setInterval(createFlamingo, gameSpeed);
+      requestAnimationFrame(gameLoop);
+      countdownInterval = setInterval(() => {
+        timer--;
+        timerDisplay.textContent = 'Time: ' + timer;
+        if (timer <= 0) {
+          timer = 0;
+          timerDisplay.textContent = 'Time: 0';
+          clearInterval(countdownInterval);
+          endGame('time');
+        }
+      }, 1000);
+
+      document.addEventListener('keydown', handleJump);
+    }
+
+    function typeWriterText() {
+      const text = `The pink shall curse you.\nThe black may set you free.\nRise, but only touch shadows that match your soul.`;
+      const target = document.getElementById('typewriterText');
+      let i = 0;
+      const interval = setInterval(() => {
+        target.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) clearInterval(interval);
+      }, 50);
+    }
+
+    function createFlamingo() {
+      const flamingo = document.createElement('img');
+      flamingo.src = Math.random() > 0.5 ? 'https://imgur.com/cQ14PT5.png' : 'https://imgur.com/Bvc26Ct.png';
+      flamingo.className = 'flamingo';
+      const characterTop = character.offsetTop;
+      flamingo.style.top = (characterTop - Math.floor(Math.random() * 40 + 40)) + 'px';
+      flamingo.style.right = '-50px';
+      document.getElementById('game').appendChild(flamingo);
+
+      setTimeout(() => {
+        flamingo.remove();
+      }, 3000);
+    }
+
+    function handleJump(e) {
+      if (e.code === 'Space') {
+        character.src = 'https://imgur.com/nkmDODU.png';
+        character.style.transition = 'bottom 0.4s ease-in-out';
+        character.style.bottom = '200px';
+        setTimeout(() => {
+          character.src = 'https://imgur.com/boXT1Qo.png';
+        }, 100);
+        setTimeout(() => {
+          character.src = 'https://imgur.com/kgCB2GB.png';
+          character.style.bottom = '82px';
+          setTimeout(() => {
+            character.src = 'https://imgur.com/QBf79X2.png';
+            setTimeout(() => {
+              character.src = 'https://imgur.com/zHtBJ2H.png';
+            }, 100);
+          }, 400);
+        }, 400);
+      }
+    }
+  function isColliding(el1, el2) {
+  const r1 = el1.getBoundingClientRect();
+  const r2 = el2.getBoundingClientRect();
+  return !(
+    r1.top > r2.bottom ||
+    r1.bottom < r2.top ||
+    r1.right < r2.left ||
+    r1.left > r2.right
+  );
+}
+
+function gameLoop() {
+  const flamingos = document.querySelectorAll('.flamingo');
+  flamingos.forEach(flamingo => {
+    if (isColliding(character, flamingo)) {
+      if (flamingo.src.includes('Bvc26Ct')) {
+        score++;
+        scoreboard.textContent = 'Score: ' + score;
+      } else {
+        lives--;
+        const hearts = heartsContainer.querySelectorAll('.heart');
+        if (hearts.length > 0) hearts[hearts.length - 1].remove();
+        if (lives === 0) endGame('over');
+      }
+      flamingo.remove();
+    }
+  });
+  requestAnimationFrame(gameLoop);
+}
+function endGame(reason) {
+  clearInterval(flamingoInterval);
+  clearInterval(countdownInterval);
+  document.removeEventListener('keydown', handleJump);
+  if (reason === 'time') {
+    document.getElementById('endScreen').classList.remove('hidden');
+  } else {
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+  }
+}
+
+function retryGame() {
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('endScreen').classList.add('hidden');
+  character.classList.add('hidden');
+  const flamingos = document.querySelectorAll('.flamingo');
+  flamingos.forEach(f => f.remove());
+  document.removeEventListener('keydown', handleJump);
+  document.getElementById('scoreboard').textContent = 'Score: 0';
+  document.getElementById('timer').textContent = 'Time: 90';
+  heartsContainer.innerHTML = `
+    <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">
+    <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">
+    <img class="heart" src="https://cdn-icons-png.flaticon.com/512/8236/8236748.png">`;
+  startGame();
+}
+
+function returnToMenu() {
+  document.getElementById('gameOverScreen').classList.add('hidden');
+  document.getElementById('endScreen').classList.add('hidden');
+  character.classList.add('hidden');
+  const flamingos = document.querySelectorAll('.flamingo');
+  flamingos.forEach(f => f.remove());
+  document.getElementById('menu').classList.remove('hidden');
+}
+</script>
+</body>
+</html>
